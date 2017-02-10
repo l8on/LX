@@ -18,8 +18,6 @@
 
 package heronarts.lx.osc;
 
-public class OscSymbol extends OscString {
-  public OscSymbol(String string) {
-    super(string);
-  }
+public interface LXOscListener {
+  public void oscMessage(OscMessage message);
 }
