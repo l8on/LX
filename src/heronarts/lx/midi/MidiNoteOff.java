@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * ##library.name##
- * ##library.sentence##
- * ##library.url##
- *
- * @author      ##author##
- * @modified    ##date##
- * @version     ##library.prettyVersion## (##library.version##)
+ * @author Mark C. Slee <mark@heronarts.com>
  */
 
-/**
- * Pre-built classes for specific MIDI hardware.
- */
-package heronarts.lx.midi.device;
+package heronarts.lx.midi;
+
+import javax.sound.midi.ShortMessage;
+
+public class MidiNoteOff extends MidiNote {
+
+  MidiNoteOff(ShortMessage message) {
+    super(message, ShortMessage.NOTE_OFF);
+  }
+
+}

@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author Mark C. Slee <mark@heronarts.com>
+ * ##library.name##
+ * ##library.sentence##
+ * ##library.url##
+ *
+ * @author      ##author##
+ * @modified    ##date##
+ * @version     ##library.prettyVersion## (##library.version##)
  */
 
-package heronarts.lx.midi;
-
-import javax.sound.midi.ShortMessage;
-
-public class LXMidiNoteOff extends LXMidiNote {
-
-  LXMidiNoteOff(ShortMessage message) {
-    super(message, ShortMessage.NOTE_OFF);
-  }
-
-}
+/**
+ * Pre-built classes for specific MIDI hardware.
+ */
+package heronarts.lx.midi.remote;

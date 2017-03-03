@@ -20,12 +20,12 @@ package heronarts.lx.midi;
 
 import javax.sound.midi.ShortMessage;
 
-public class LXMidiProgramChange extends LXShortMessage {
-  LXMidiProgramChange(ShortMessage message) {
-    super(message, ShortMessage.PROGRAM_CHANGE);
+public class MidiAftertouch extends LXShortMessage {
+  MidiAftertouch(ShortMessage message) {
+    super(message, ShortMessage.CHANNEL_PRESSURE);
   }
 
-  public int getProgram() {
+  public int getAftertouch() {
     return getData1();
   }
 }

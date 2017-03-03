@@ -20,17 +20,10 @@ package heronarts.lx.midi;
 
 import javax.sound.midi.ShortMessage;
 
-public abstract class LXMidiNote extends LXShortMessage {
+public class MidiNoteOn extends MidiNote {
 
-  protected LXMidiNote(ShortMessage message, int command) {
-    super(message, command);
+  MidiNoteOn(ShortMessage message) {
+    super(message, ShortMessage.NOTE_ON);
   }
 
-  public int getPitch() {
-    return getData1();
-  }
-
-  public int getVelocity() {
-    return getData2();
-  }
 }
