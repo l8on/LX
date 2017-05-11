@@ -20,28 +20,36 @@
 
 package heronarts.lx;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import heronarts.lx.modulator.LXModulator;
+
 /**
- * A component which owns a buffer with its own view of the model. The typical
- * example of this is LXPattern.
+ * A component which may have its own scoped user-level modulators. The concrete subclasses
+ * of this are Patterns and Effects.
  */
-public abstract class LXBufferedComponent extends LXLayeredComponent {
+public abstract class LXDeviceComponent extends LXLayeredComponent {
 
-  protected LXBufferedComponent(LX lx) {
-    super(lx, new ModelBuffer(lx));
+  public interface DeviceListener {
+    public void lfoAdded(LXDeviceComponent device, LXModulator modulator);
+    public void lfoRemoved(LXDeviceComponent device, LXModulator modulator);
   }
 
-  public int[] getColors() {
-    return getBuffer().getArray();
+  private final List<DeviceListener> listeners = new ArrayList<DeviceListener>();
+
+  protected LXDeviceComponent(LX lx) {
+    super(lx);
   }
 
-  @Override
-  public void loop(double deltaMs) {
-    super.loop(deltaMs);
+  public LXDeviceComponent addDeviceListener(DeviceListener listener) {
+    this.listeners.add(listener);
+    return this;
   }
 
-  @Override
-  protected LXLayeredComponent setBuffer(LXBuffer buffer) {
-    throw new UnsupportedOperationException("Cannot setBuffer on LXBufferedComponent, owns its own buffer");
+  public LXDeviceComponent removeDeviceListener(DeviceListener listener) {
+    this.listeners.remove(listener);
+    return this;
   }
 
 }
