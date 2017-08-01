@@ -25,19 +25,24 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
+import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
 
 public class LXAudioInput extends LXAudioBuffer implements LineListener {
   private static final int SAMPLE_BUFFER_SIZE = 512;
   private static final int BYTES_PER_SAMPLE = 2;
-  private static final int NUM_CHANNELS = 2;
-  private static final int FRAME_SIZE = BYTES_PER_SAMPLE * NUM_CHANNELS;
-  private static final int INPUT_DATA_SIZE = SAMPLE_BUFFER_SIZE * FRAME_SIZE;
+
+  private static final int DEFAULT_NUM_CHANNELS = 2;
+  private static final int DEFAULT_FRAME_SIZE = BYTES_PER_SAMPLE * DEFAULT_NUM_CHANNELS;
+  private static final int DEFAULT_INPUT_DATA_SIZE = SAMPLE_BUFFER_SIZE * DEFAULT_FRAME_SIZE;
 
   private TargetDataLine line;
-  private final AudioFormat format;
+  private AudioFormat format;
 
-  private final byte[] rawBytes = new byte[INPUT_DATA_SIZE];
+  private byte[] rawBytes;
+  private int frameSize;
+  private int inputDataSize;
+  private int numChannels;
 
   public final LXAudioBuffer left = new LXAudioBuffer(SAMPLE_BUFFER_SIZE);
   public final LXAudioBuffer right = new LXAudioBuffer(SAMPLE_BUFFER_SIZE);
@@ -49,9 +54,15 @@ public class LXAudioInput extends LXAudioBuffer implements LineListener {
   private InputThread inputThread = null;
 
   private class InputThread extends Thread {
+    private final int numChannels;
+    private final int inputDataSize;
+    private final int frameSize;
 
-    private InputThread() {
+    private InputThread(int numChannels, int inputDataSize, int frameSize) {
       super("LXAudioEngine Input Thread");
+      this.numChannels = numChannels;
+      this.inputDataSize = inputDataSize;
+      this.frameSize = frameSize;
     }
 
     @Override
@@ -71,18 +82,41 @@ public class LXAudioInput extends LXAudioBuffer implements LineListener {
         // Read from the audio line
         line.read(rawBytes, 0, rawBytes.length);
 
-        // Put the left and right buffers
-        left.putSamples(rawBytes, 0, INPUT_DATA_SIZE, FRAME_SIZE);
-        right.putSamples(rawBytes, 2, INPUT_DATA_SIZE, FRAME_SIZE);
-        computeMix(left, right);
+        // Put the left and right buffers if stereo
+        if (this.numChannels == 2) {
+          left.putSamples(rawBytes, 0, this.inputDataSize, this.frameSize);
+          right.putSamples(rawBytes, 2, this.inputDataSize, this.frameSize);
+          computeMix(left, right);
+        } else {
+          putSamples(rawBytes, 0, this.inputDataSize, this.frameSize);
+        }
       }
     }
 
   };
 
-  LXAudioInput() {
+  public LXAudioInput() {
+    this(new AudioFormat(SAMPLE_RATE, 8 * BYTES_PER_SAMPLE, DEFAULT_NUM_CHANNELS, true, false));
+  }
+
+  public LXAudioInput(AudioFormat format) {
     super(SAMPLE_BUFFER_SIZE);
-    this.format = new AudioFormat(SAMPLE_RATE, 8*BYTES_PER_SAMPLE, NUM_CHANNELS, true, false);
+    this.setAudioFormat(format);
+  }
+
+  /**
+   * Sets a new audio format.
+   * Returns this for chaining.
+   *
+   * @return LXAudioInput
+   */
+  public LXAudioInput setAudioFormat(AudioFormat format) {
+    this.format = format;
+    this.numChannels = format.getChannels();
+    this.frameSize = BYTES_PER_SAMPLE * this.numChannels;
+    this.inputDataSize = SAMPLE_BUFFER_SIZE * this.frameSize;
+    this.rawBytes = new byte[this.inputDataSize];
+    return this;
   }
 
   public AudioFormat getFormat() {
@@ -91,19 +125,19 @@ public class LXAudioInput extends LXAudioBuffer implements LineListener {
 
   void open() {
     if (this.line == null) {
-      DataLine.Info info = new DataLine.Info(TargetDataLine.class,  this.format);
+      DataLine.Info info = new DataLine.Info(TargetDataLine.class, this.format);
       if (!AudioSystem.isLineSupported(info)) {
         System.err.println("AudioSystem does not support stereo 16-bit input");
         return;
       }
       try {
-        this.line = (TargetDataLine) AudioSystem.getLine(info);
+        this.line = this.getTargetDataLine(info);
         this.line.addLineListener(this);
-        this.line.open(this.format, INPUT_DATA_SIZE*2);
+        this.line.open(this.format, this.inputDataSize * this.numChannels);
         this.line.start();
         this.stopped = false;
         this.closed = false;
-        this.inputThread = new InputThread();
+        this.inputThread = new InputThread(this.numChannels, this.inputDataSize, this.frameSize);
         this.inputThread.start();
       } catch (Exception x) {
         System.err.println(x.getLocalizedMessage());
@@ -150,16 +184,25 @@ public class LXAudioInput extends LXAudioBuffer implements LineListener {
     }
   }
 
+  /*
+   * Retrieves the default TargetDataLine that matches the defined format.
+   * Override to retrieve a more specific TargetDataLine from the AudioSystem.
+   *
+   */
+  protected TargetDataLine getTargetDataLine(DataLine.Info info)
+    throws LineUnavailableException {
+    return (TargetDataLine) AudioSystem.getLine(info);
+  }
+
   @Override
   public void update(LineEvent event) {
     LineEvent.Type type = event.getType();
     if (type == LineEvent.Type.OPEN) {
-    } else if (type == LineEvent.Type.START){
+    } else if (type == LineEvent.Type.START) {
     } else if (type == LineEvent.Type.STOP) {
       this.stopped = true;
     } else if (type == LineEvent.Type.CLOSE) {
       this.closed = true;
     }
   }
-
 }

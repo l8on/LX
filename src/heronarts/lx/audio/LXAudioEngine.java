@@ -38,11 +38,11 @@ public class LXAudioEngine extends LXModulatorComponent implements LXOscComponen
   /**
    * Audio input object
    */
-  public final LXAudioInput input = new LXAudioInput();
+  public LXAudioInput input = new LXAudioInput();
 
   public final LXAudioOutput output = new LXAudioOutput();
 
-  public final GraphicMeter meter = new GraphicMeter("Meter", this.input);
+  public GraphicMeter meter = new GraphicMeter("Meter", this.input);
 
   public LXAudioEngine(LX lx) {
     super(lx, "Audio");
@@ -74,6 +74,26 @@ public class LXAudioEngine extends LXModulatorComponent implements LXOscComponen
    */
   public final LXAudioInput getInput() {
     return this.input;
+  }
+
+  /**
+   * Change the audio input used by the audio engine.
+   * Will also update the `meter` object.
+   * Returns the LXAudioEngine for chaining.
+   *
+   * @return LXAudioEngine
+   */
+  public LXAudioEngine changeInput(LXAudioInput input) {
+    if (this.input != null) {
+      this.input.close();
+    }
+    if (this.meter != null) {
+      removeModulator(this.meter);
+    }
+    this.input = input;
+    this.meter = new GraphicMeter("Meter", this.input);
+    addModulator(this.meter);
+    return this;
   }
 
   @Override
